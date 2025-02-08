@@ -1,6 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro", "PulsePro\PulsePro.csproj", "{D0CCC636-FF13-470A-AA66-14EEFD034FB0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.WebApi", "PulsePro.WebApi\PulsePro.WebApi.csproj", "{D0CCC636-FF13-470A-AA66-14EEFD034FB0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Domain", "PulsePro.Domain\PulsePro.Domain.csproj", "{C18C88DA-05B2-409A-A925-27E5DA7A6696}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Application", "PulsePro.Application\PulsePro.Application.csproj", "{6B948869-5132-4C5E-9B37-D35E5F45CDEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Persistance", "PulsePro.Persistance\PulsePro.Persistance.csproj", "{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +18,17 @@ Global
 		{D0CCC636-FF13-470A-AA66-14EEFD034FB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0CCC636-FF13-470A-AA66-14EEFD034FB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0CCC636-FF13-470A-AA66-14EEFD034FB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C18C88DA-05B2-409A-A925-27E5DA7A6696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C18C88DA-05B2-409A-A925-27E5DA7A6696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C18C88DA-05B2-409A-A925-27E5DA7A6696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C18C88DA-05B2-409A-A925-27E5DA7A6696}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B948869-5132-4C5E-9B37-D35E5F45CDEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B948869-5132-4C5E-9B37-D35E5F45CDEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B948869-5132-4C5E-9B37-D35E5F45CDEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B948869-5132-4C5E-9B37-D35E5F45CDEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
