@@ -7,7 +7,10 @@ public class TrainingExercise
     public string MuscleGroup { get; set; } = null!;       
     public string ExerciseName { get; set; } = null!;      
     public int Sets { get; set; }                          
-    public int Reps { get; set; }                          
+    public int Reps { get; set; }     
+    public double? StartWeight { get; set; }                
+    public double? TargetWeight { get; set; } 
+    public int? ExerciseTime { get; set; }
 
     public Guid TrainingPlanId { get; set; }
     public TrainingPlan TrainingPlan { get; set; } = null!;

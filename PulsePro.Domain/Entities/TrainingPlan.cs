@@ -7,8 +7,7 @@ public class TrainingPlan
 
     public int WorkoutsPerWeek { get; set; }               
     public int SessionLengthMinutes { get; set; }          
-    public double StartWeight { get; set; }                
-    public double TargetWeight { get; set; }              
+          
 
     public ICollection<TrainingExercise> Exercises { get; set; } = new List<TrainingExercise>();
 

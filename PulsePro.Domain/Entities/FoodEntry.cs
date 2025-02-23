@@ -9,7 +9,8 @@ public class FoodEntry
     public int Protein { get; set; }
     public int Fat { get; set; }
     public int Carbs { get; set; }
-
+    public int Fiber { get; set; }
+    
     public Guid NutritionDayId { get; set; }
     public NutritionDay NutritionDay { get; set; } = null!;
 }
