@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Domain", "PulsePro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Application", "PulsePro.Application\PulsePro.Application.csproj", "{6B948869-5132-4C5E-9B37-D35E5F45CDEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Persistance", "PulsePro.Persistance\PulsePro.Persistance.csproj", "{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PulsePro.Persistence", "PulsePro.Persistence\PulsePro.Persistence.csproj", "{3DE1C8E7-BAAC-4D3C-9D13-921A00BBC378}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

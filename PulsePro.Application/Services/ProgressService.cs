@@ -4,109 +4,106 @@ using PulsePro.Application.DTO;
 using PulsePro.Application.Mappers;
 using PulsePro.Domain.Entities;
 
-namespace PulsePro.Application.Services
+namespace PulsePro.Application.Services;
+
+public class ProgressService : IProgressService
 {
-    public class ProgressService : IProgressService
+    private readonly IApplicationDbContext _db;
+    private readonly ApplicationMapper     _map;
+
+    public ProgressService(IApplicationDbContext db, ApplicationMapper map)
     {
-        private readonly IApplicationDbContext _db;
-        private readonly ApplicationMapper _mapper;
+        _db  = db;
+        _map = map;
+    }
 
-        public ProgressService(IApplicationDbContext db, ApplicationMapper mapper)
+    public async Task<ProgressRecordDto> CreateRecordAsync(Guid userId, CreateProgressRecordDto dto)
+    {
+        if (await _db.Users.FindAsync(userId) is null)
+            throw new InvalidOperationException("User not found.");
+
+        var entity = new ProgressRecord
         {
-            _db = db;
-            _mapper = mapper;
-        }
+            Id = Guid.NewGuid(),
+            UserId                       = userId,
+            Date                         = dto.Date,
+            CurrentWeight                = dto.CurrentWeight,
+            WeightChangeSinceLast        = dto.WeightChangeSinceLast,
+            ExercisesPlanned             = dto.ExercisesPlanned,
+            ExercisesCompleted           = dto.ExercisesCompleted,
+            TotalSetsPlanned             = dto.TotalSetsPlanned,
+            TotalSetsCompleted           = dto.TotalSetsCompleted,
+            TrainingCompliancePercentage = dto.TrainingCompliancePercentage,
+            TrainingNotes                = dto.TrainingNotes,
+            PlannedCalories              = dto.PlannedCalories,
+            ActualCalories               = dto.ActualCalories,
+            PlannedProtein               = dto.PlannedProtein,
+            ActualProtein                = dto.ActualProtein,
+            PlannedFat                   = dto.PlannedFat,
+            ActualFat                    = dto.ActualFat,
+            PlannedCarbs                 = dto.PlannedCarbs,
+            ActualCarbs                  = dto.ActualCarbs,
+            NutritionCompliancePercentage= dto.NutritionCompliancePercentage,
+            NutritionNotes               = dto.NutritionNotes,
+            GeneralNotes                 = dto.GeneralNotes
+        };
 
-        public async Task<ProgressRecordDto> CreateRecordAsync(Guid userId, CreateProgressRecordDto dto)
-        {
-            var user = await _db.Users.FindAsync(userId);
-            if (user == null) throw new Exception("User not found.");
+        _db.ProgressRecords.Add(entity);
+        await _db.SaveChangesAsync();
 
-            var record = new ProgressRecord
-            {
-                Id = Guid.NewGuid(),
-                Date = dto.Date,
-                CurrentWeight = dto.CurrentWeight,
-                WeightChangeSinceLast = dto.WeightChangeSinceLast,
-                ExercisesPlanned = dto.ExercisesPlanned,
-                ExercisesCompleted = dto.ExercisesCompleted,
-                TotalSetsPlanned = dto.TotalSetsPlanned,
-                TotalSetsCompleted = dto.TotalSetsCompleted,
-                TrainingCompliancePercentage = dto.TrainingCompliancePercentage,
-                TrainingNotes = dto.TrainingNotes,
-                PlannedCalories = dto.PlannedCalories,
-                ActualCalories = dto.ActualCalories,
-                PlannedProtein = dto.PlannedProtein,
-                ActualProtein = dto.ActualProtein,
-                PlannedFat = dto.PlannedFat,
-                ActualFat = dto.ActualFat,
-                PlannedCarbs = dto.PlannedCarbs,
-                ActualCarbs = dto.ActualCarbs,
-                NutritionCompliancePercentage = dto.NutritionCompliancePercentage,
-                NutritionNotes = dto.NutritionNotes,
-                GeneralNotes = dto.GeneralNotes,
-                UserId = userId
-            };
+        return _map.ProgressRecordToDto(entity);
+    }
 
-            _db.ProgressRecords.Add(record);
-            await _db.SaveChangesAsync();
+    public async Task<IEnumerable<ProgressRecordDto>> GetRecordsForUserAsync(Guid userId)
+    {
+        var list = await _db.ProgressRecords
+                            .Where(r => r.UserId == userId)
+                            .OrderByDescending(r => r.Date)
+                            .ToListAsync();
+        return list.Select(_map.ProgressRecordToDto);
+    }
 
-            return _mapper.ProgressRecordToDto(record);
-        }
+    public async Task<ProgressRecordDto?> GetRecordByIdAsync(Guid id)
+    {
+        var entity = await _db.ProgressRecords.FindAsync(id);
+        return entity is null ? null : _map.ProgressRecordToDto(entity);
+    }
 
-        public async Task<IEnumerable<ProgressRecordDto>> GetRecordsForUserAsync(Guid userId)
-        {
-            var records = await _db.ProgressRecords
-                .Where(r => r.UserId == userId)
-                .OrderByDescending(r => r.Date)
-                .ToListAsync();
+    public async Task UpdateRecordAsync(ProgressRecordDto dto)
+    {
+        var entity = await _db.ProgressRecords.FindAsync(dto.Id)
+                     ?? throw new InvalidOperationException("Record not found.");
 
-            return records.Select(_mapper.ProgressRecordToDto);
-        }
+        entity.Date                         = dto.Date;
+        entity.CurrentWeight                = dto.CurrentWeight;
+        entity.WeightChangeSinceLast        = dto.WeightChangeSinceLast;
+        entity.ExercisesPlanned             = dto.ExercisesPlanned;
+        entity.ExercisesCompleted           = dto.ExercisesCompleted;
+        entity.TotalSetsPlanned             = dto.TotalSetsPlanned;
+        entity.TotalSetsCompleted           = dto.TotalSetsCompleted;
+        entity.TrainingCompliancePercentage = dto.TrainingCompliancePercentage;
+        entity.TrainingNotes                = dto.TrainingNotes;
+        entity.PlannedCalories              = dto.PlannedCalories;
+        entity.ActualCalories               = dto.ActualCalories;
+        entity.PlannedProtein               = dto.PlannedProtein;
+        entity.ActualProtein                = dto.ActualProtein;
+        entity.PlannedFat                   = dto.PlannedFat;
+        entity.ActualFat                    = dto.ActualFat;
+        entity.PlannedCarbs                 = dto.PlannedCarbs;
+        entity.ActualCarbs                  = dto.ActualCarbs;
+        entity.NutritionCompliancePercentage= dto.NutritionCompliancePercentage;
+        entity.NutritionNotes               = dto.NutritionNotes;
+        entity.GeneralNotes                 = dto.GeneralNotes;
 
-        public async Task<ProgressRecordDto?> GetRecordByIdAsync(Guid recordId)
-        {
-            var record = await _db.ProgressRecords.FindAsync(recordId);
-            return record == null ? null : _mapper.ProgressRecordToDto(record);
-        }
+        await _db.SaveChangesAsync();
+    }
 
-        public async Task UpdateRecordAsync(ProgressRecordDto dto)
-        {
-            var record = await _db.ProgressRecords.FindAsync(dto.Id);
-            if (record == null) throw new Exception("Record not found.");
+    public async Task DeleteRecordAsync(Guid id)
+    {
+        var entity = await _db.ProgressRecords.FindAsync(id)
+                     ?? throw new InvalidOperationException("Record not found.");
 
-            record.Date = dto.Date;
-            record.CurrentWeight = dto.CurrentWeight;
-            record.WeightChangeSinceLast = dto.WeightChangeSinceLast;
-            record.ExercisesPlanned = dto.ExercisesPlanned;
-            record.ExercisesCompleted = dto.ExercisesCompleted;
-            record.TotalSetsPlanned = dto.TotalSetsPlanned;
-            record.TotalSetsCompleted = dto.TotalSetsCompleted;
-            record.TrainingCompliancePercentage = dto.TrainingCompliancePercentage;
-            record.TrainingNotes = dto.TrainingNotes;
-            record.PlannedCalories = dto.PlannedCalories;
-            record.ActualCalories = dto.ActualCalories;
-            record.PlannedProtein = dto.PlannedProtein;
-            record.ActualProtein = dto.ActualProtein;
-            record.PlannedFat = dto.PlannedFat;
-            record.ActualFat = dto.ActualFat;
-            record.PlannedCarbs = dto.PlannedCarbs;
-            record.ActualCarbs = dto.ActualCarbs;
-            record.NutritionCompliancePercentage = dto.NutritionCompliancePercentage;
-            record.NutritionNotes = dto.NutritionNotes;
-            record.GeneralNotes = dto.GeneralNotes;
-
-            _db.ProgressRecords.Update(record);
-            await _db.SaveChangesAsync();
-        }
-
-        public async Task DeleteRecordAsync(Guid recordId)
-        {
-            var record = await _db.ProgressRecords.FindAsync(recordId);
-            if (record == null) throw new Exception("Record not found.");
-
-            _db.ProgressRecords.Remove(record);
-            await _db.SaveChangesAsync();
-        }
+        _db.ProgressRecords.Remove(entity);
+        await _db.SaveChangesAsync();
     }
 }

@@ -4,82 +4,73 @@ using PulsePro.Application.DTO;
 using PulsePro.Application.Mappers;
 using PulsePro.Domain.Entities;
 
-namespace PulsePro.Application.Services
+namespace PulsePro.Application.Services;
+
+public class TrainingPlanService : ITrainingPlanService
 {
-    public class TrainingPlanService : ITrainingPlanService
+    private readonly IApplicationDbContext _db;
+    private readonly ApplicationMapper     _map;
+
+    public TrainingPlanService(IApplicationDbContext db, ApplicationMapper map)
     {
-        private readonly IApplicationDbContext _db;
-        private readonly ApplicationMapper _mapper;
+        _db  = db;
+        _map = map;
+    }
 
-        public TrainingPlanService(IApplicationDbContext db, ApplicationMapper mapper)
+    public async Task<TrainingPlanDto> CreatePlanAsync(Guid userId, CreateTrainingPlanDto dto)
+    {
+        if (await _db.Users.FindAsync(userId) is null)
+            throw new InvalidOperationException("User not found.");
+
+        var entity = new TrainingPlan
         {
-            _db = db;
-            _mapper = mapper;
-        }
+            Id                   = Guid.NewGuid(),
+            UserId               = userId,
+            PlanName             = dto.PlanName,
+            WorkoutsPerWeek      = dto.WorkoutsPerWeek,
+            SessionLengthMinutes = dto.SessionLengthMinutes
+        };
 
-        public async Task<TrainingPlanDto> CreatePlanAsync(Guid userId, CreateTrainingPlanDto dto)
-        {
-            var user = await _db.Users.FindAsync(userId);
-            if (user == null) throw new Exception("User not found.");
+        _db.TrainingPlans.Add(entity);
+        await _db.SaveChangesAsync();
 
-            var plan = new TrainingPlan
-            {
-                Id = Guid.NewGuid(),
-                PlanName = dto.PlanName,
-                WorkoutsPerWeek = dto.WorkoutsPerWeek,
-                SessionLengthMinutes = dto.SessionLengthMinutes,
-                UserId = userId
-            };
+        return _map.TrainingPlanToDto(entity);
+    }
 
-            _db.TrainingPlans.Add(plan);
-            await _db.SaveChangesAsync();
+    public async Task<IEnumerable<TrainingPlanDto>> GetPlansForUserAsync(Guid userId)
+    {
+        var plans = await _db.TrainingPlans
+                             .Include(p => p.Exercises)
+                             .Where(p => p.UserId == userId)
+                             .ToListAsync();
+        return plans.Select(_map.TrainingPlanToDto);
+    }
 
-            var planDto = _mapper.TrainingPlanToDto(plan);
-            return planDto;
-        }
+    public async Task<TrainingPlanDto?> GetPlanByIdAsync(Guid id)
+    {
+        var plan = await _db.TrainingPlans
+                            .Include(p => p.Exercises)
+                            .FirstOrDefaultAsync(p => p.Id == id);
+        return plan is null ? null : _map.TrainingPlanToDto(plan);
+    }
 
-        public async Task<IEnumerable<TrainingPlanDto>> GetPlansForUserAsync(Guid userId)
-        {
-            var plans = await _db.TrainingPlans
-                .Include(p => p.Exercises)
-                .Where(p => p.UserId == userId)
-                .ToListAsync();
+    public async Task UpdatePlanAsync(TrainingPlanDto dto)
+    {
+        var entity = await _db.TrainingPlans
+                              .Include(p => p.Exercises)
+                              .FirstOrDefaultAsync(p => p.Id == dto.Id)
+                     ?? throw new InvalidOperationException("Plan not found.");
 
-            return plans.Select(_mapper.TrainingPlanToDto);
-        }
+        _map.UpdateTrainingPlanFromDto(dto, entity);
+        await _db.SaveChangesAsync();
+    }
 
-        public async Task<TrainingPlanDto?> GetPlanByIdAsync(Guid planId)
-        {
-            var plan = await _db.TrainingPlans
-                .Include(p => p.Exercises)
-                .FirstOrDefaultAsync(p => p.Id == planId);
+    public async Task DeletePlanAsync(Guid id)
+    {
+        var plan = await _db.TrainingPlans.FindAsync(id)
+                   ?? throw new InvalidOperationException("Plan not found.");
 
-            return plan == null ? null : _mapper.TrainingPlanToDto(plan);
-        }
-
-        public async Task UpdatePlanAsync(TrainingPlanDto dto)
-        {
-            var plan = await _db.TrainingPlans
-                .Include(p => p.Exercises)
-                .FirstOrDefaultAsync(p => p.Id == dto.Id);
-
-            if (plan == null) throw new Exception("Plan not found.");
-
-            _mapper.UpdateTrainingPlanFromDto(dto, ref plan);
-
-            // Якщо потрібна окрема логіка оновлення/видалення/додавання exercises:
-            // - зіставити dto.Exercises з plan.Exercises
-
-            await _db.SaveChangesAsync();
-        }
-
-        public async Task DeletePlanAsync(Guid planId)
-        {
-            var plan = await _db.TrainingPlans.FindAsync(planId);
-            if (plan == null) throw new Exception("Plan not found.");
-
-            _db.TrainingPlans.Remove(plan);
-            await _db.SaveChangesAsync();
-        }
+        _db.TrainingPlans.Remove(plan);
+        await _db.SaveChangesAsync();
     }
 }

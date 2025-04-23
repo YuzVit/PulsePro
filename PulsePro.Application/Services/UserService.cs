@@ -4,62 +4,67 @@ using PulsePro.Application.DTO;
 using PulsePro.Application.Mappers;
 using PulsePro.Domain.Entities;
 
-namespace PulsePro.Application.Services
+namespace PulsePro.Application.Services;
+
+public class UserService : IUserService
 {
-    public class UserService : IUserService
+    private readonly IApplicationDbContext _db;
+    private readonly IPasswordHasher       _hasher;
+    private readonly ITokenGenerator       _tokens;
+    private readonly ApplicationMapper     _map;
+
+    public UserService(IApplicationDbContext db, IPasswordHasher hasher,
+                       ITokenGenerator tokens, ApplicationMapper map)
     {
-        private readonly IApplicationDbContext _db;
-        private readonly ApplicationMapper _mapper;
+        _db     = db;
+        _hasher = hasher;
+        _tokens = tokens;
+        _map    = map;
+    }
 
-        public UserService(IApplicationDbContext db, ApplicationMapper mapper)
-        {
-            _db = db;
-            _mapper = mapper;
-        }
+    public async Task<UserDto> RegisterAsync(RegisterUserDto dto)
+    {
+        if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
+            throw new InvalidOperationException("Email already in use.");
 
-        public async Task<UserDto> RegisterAsync(RegisterUserDto dto)
-        {
-            var existing = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (existing != null) throw new Exception("Email already in use.");
+        var entity = _map.RegisterUserDtoToUser(dto);
+        entity.Id           = Guid.NewGuid();
+        entity.PasswordHash = _hasher.Hash(dto.Password);
 
-            var userEntity = _mapper.RegisterUserDtoToUser(dto);
-            userEntity.Id = Guid.NewGuid();
-            userEntity.PasswordHash = "HASH(" + dto.Password + ")"; // У реалі – безпечне хешування
+        _db.Users.Add(entity);
+        await _db.SaveChangesAsync();
 
-            _db.Users.Add(userEntity);
-            await _db.SaveChangesAsync();
+        return _map.UserToDto(entity);
+    }
 
-            return _mapper.UserToDto(userEntity);
-        }
+    public async Task<string> LoginAsync(LoginUserDto dto)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email)
+            ?? throw new InvalidOperationException("User not found.");
 
-        public async Task<string> LoginAsync(LoginUserDto dto)
-        {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null) throw new Exception("User not found.");
-            if (user.PasswordHash != "HASH(" + dto.Password + ")") throw new Exception("Invalid password.");
+        if (!_hasher.Verify(dto.Password, user.PasswordHash))
+            throw new InvalidOperationException("Invalid credentials.");
 
-            return "FAKE_JWT_TOKEN";
-        }
+        return _tokens.GenerateAccessToken(user.Id, user.Email);
+    }
 
-        public async Task<UserDto?> GetUserByIdAsync(Guid userId)
-        {
-            var user = await _db.Users.FindAsync(userId);
-            return user == null ? null : _mapper.UserToDto(user);
-        }
+    public async Task<UserDto?> GetUserByIdAsync(Guid id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        return user is null ? null : _map.UserToDto(user);
+    }
 
-        public async Task UpdateUserAsync(UserDto dto)
-        {
-            var user = await _db.Users.FindAsync(dto.Id);
-            if (user == null) throw new Exception("User not found.");
+    public async Task UpdateUserAsync(UserDto dto)
+    {
+        var user = await _db.Users.FindAsync(dto.Id)
+            ?? throw new InvalidOperationException("User not found.");
 
-            user.UserName = dto.UserName;
-            user.Email = dto.Email;
-            user.Weight = dto.Weight;
-            user.Height = dto.Height;
-            user.BirthDate = dto.BirthDate;
+        user.UserName   = dto.UserName;
+        user.Email      = dto.Email;
+        user.Weight     = dto.Weight;
+        user.Height     = dto.Height;
+        user.BirthDate  = dto.BirthDate;
 
-            _db.Users.Update(user);
-            await _db.SaveChangesAsync();
-        }
+        await _db.SaveChangesAsync();
     }
 }

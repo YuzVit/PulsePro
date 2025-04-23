@@ -4,81 +4,74 @@ using PulsePro.Application.DTO;
 using PulsePro.Application.Mappers;
 using PulsePro.Domain.Entities;
 
-namespace PulsePro.Application.Services
+namespace PulsePro.Application.Services;
+
+public class NutritionDayService : INutritionDayService
 {
-    public class NutritionDayService : INutritionDayService
+    private readonly IApplicationDbContext _db;
+    private readonly ApplicationMapper     _map;
+
+    public NutritionDayService(IApplicationDbContext db, ApplicationMapper map)
     {
-        private readonly IApplicationDbContext _db;
-        private readonly ApplicationMapper _mapper;
+        _db  = db;
+        _map = map;
+    }
 
-        public NutritionDayService(IApplicationDbContext db, ApplicationMapper mapper)
+    public async Task<NutritionDayDto> CreateDayAsync(Guid userId, CreateNutritionDayDto dto)
+    {
+        if (await _db.Users.FindAsync(userId) is null)
+            throw new InvalidOperationException("User not found.");
+
+        var entity = new NutritionDay
         {
-            _db = db;
-            _mapper = mapper;
-        }
+            Id            = Guid.NewGuid(),
+            UserId        = userId,
+            TargetCalories= dto.TargetCalories,
+            TargetProtein = dto.TargetProtein,
+            TargetFat     = dto.TargetFat,
+            TargetCarbs   = dto.TargetCarbs
+        };
 
-        public async Task<NutritionDayDto> CreateDayAsync(Guid userId, CreateNutritionDayDto dto)
-        {
-            var user = await _db.Users.FindAsync(userId);
-            if (user == null) throw new Exception("User not found.");
+        _db.NutritionDays.Add(entity);
+        await _db.SaveChangesAsync();
 
-            var day = new NutritionDay
-            {
-                Id = Guid.NewGuid(),
-                TargetCalories = dto.TargetCalories,
-                TargetProtein = dto.TargetProtein,
-                TargetFat = dto.TargetFat,
-                TargetCarbs = dto.TargetCarbs,
-                UserId = userId
-            };
+        return _map.NutritionDayToDto(entity);
+    }
 
-            _db.NutritionDays.Add(day);
-            await _db.SaveChangesAsync();
+    public async Task<IEnumerable<NutritionDayDto>> GetDaysForUserAsync(Guid userId)
+    {
+        var list = await _db.NutritionDays
+                            .Include(d => d.FoodEntries)
+                            .Where(d => d.UserId == userId)
+                            .ToListAsync();
+        return list.Select(_map.NutritionDayToDto);
+    }
 
-            var dayDto = _mapper.NutritionDayToDto(day);
-            return dayDto;
-        }
+    public async Task<NutritionDayDto?> GetDayByIdAsync(Guid id)
+    {
+        var entity = await _db.NutritionDays
+                              .Include(d => d.FoodEntries)
+                              .FirstOrDefaultAsync(d => d.Id == id);
+        return entity is null ? null : _map.NutritionDayToDto(entity);
+    }
 
-        public async Task<IEnumerable<NutritionDayDto>> GetDaysForUserAsync(Guid userId)
-        {
-            var days = await _db.NutritionDays
-                .Include(d => d.FoodEntries)
-                .Where(d => d.UserId == userId)
-                .ToListAsync();
+    public async Task UpdateDayAsync(NutritionDayDto dto)
+    {
+        var entity = await _db.NutritionDays
+                              .Include(d => d.FoodEntries)
+                              .FirstOrDefaultAsync(d => d.Id == dto.Id)
+                     ?? throw new InvalidOperationException("Day not found.");
 
-            return days.Select(_mapper.NutritionDayToDto);
-        }
+        _map.UpdateNutritionDayFromDto(dto, entity);
+        await _db.SaveChangesAsync();
+    }
 
-        public async Task<NutritionDayDto?> GetDayByIdAsync(Guid dayId)
-        {
-            var day = await _db.NutritionDays
-                .Include(d => d.FoodEntries)
-                .FirstOrDefaultAsync(d => d.Id == dayId);
+    public async Task DeleteDayAsync(Guid id)
+    {
+        var day = await _db.NutritionDays.FindAsync(id)
+                  ?? throw new InvalidOperationException("Day not found.");
 
-            return day == null ? null : _mapper.NutritionDayToDto(day);
-        }
-
-        public async Task UpdateDayAsync(NutritionDayDto dto)
-        {
-            var day = await _db.NutritionDays
-                .Include(d => d.FoodEntries)
-                .FirstOrDefaultAsync(d => d.Id == dto.Id);
-
-            if (day == null) throw new Exception("NutritionDay not found.");
-
-            _mapper.UpdateNutritionDayFromDto(dto, ref day);
-            // Окремо можна опрацювати FoodEntries (додавання / оновлення / видалення)
-
-            await _db.SaveChangesAsync();
-        }
-
-        public async Task DeleteDayAsync(Guid dayId)
-        {
-            var day = await _db.NutritionDays.FindAsync(dayId);
-            if (day == null) throw new Exception("NutritionDay not found.");
-
-            _db.NutritionDays.Remove(day);
-            await _db.SaveChangesAsync();
-        }
+        _db.NutritionDays.Remove(day);
+        await _db.SaveChangesAsync();
     }
 }

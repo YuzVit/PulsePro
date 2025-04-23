@@ -24,7 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\PulsePro.Application\PulsePro.Application.csproj" />
-      <ProjectReference Include="..\PulsePro.Persistance\PulsePro.Persistance.csproj" />
+      <ProjectReference Include="..\PulsePro.Persistence\PulsePro.Persistence.csproj" />
     </ItemGroup>
 
     <ItemGroup>
